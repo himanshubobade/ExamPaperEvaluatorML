@@ -1,0 +1,27 @@
+from textblob import TextBlob
+def correct_sentence_spelling(sentence):
+    
+    sentence = TextBlob(sentence)
+    
+    result = sentence.correct()
+    
+    return(result)
+
+import pandas as pd
+def file_to_list(file):
+    rtn: object = []
+    file_object: object = open(file, "r",encoding="utf-8")
+    rtn: object = file_object.read().splitlines()
+    file_object.close()
+    return list(filter(None, pd.unique(rtn).tolist())) # Remove Empty/Duplicates Values
+    pass
+
+# Example #    
+data_from_file: object = file_to_list('answer1.txt')
+    
+#sentence = "My naem is oeter"
+for i in range(len(data_from_file)):
+    data_from_file[i] = correct_sentence_spelling(data_from_file[i])
+    print(data_from_file[i])
+    
+print(data_from_file)

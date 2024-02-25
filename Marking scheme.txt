@@ -1,0 +1,3 @@
+sim_scores = ds.calculate_similarity(source_doc, target_docs)
+
+print("Similarity Matrix Score:",sim_scores[0].get('score'))

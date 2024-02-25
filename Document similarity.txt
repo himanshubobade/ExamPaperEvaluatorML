@@ -1,0 +1,96 @@
+import numpy as np
+
+
+class DocSim:
+    def __init__(self, w2v_model, stopwords=None):
+        self.w2v_model = w2v_model
+        self.stopwords = stopwords if stopwords is not None else []
+
+    def vectorize(self, doc: str) -> np.ndarray:
+        """
+        Identify the vector values for each word in the given document
+        :param doc:
+        :return:
+        """
+        doc = doc.lower()
+        words = [w for w in doc.split(" ") if w not in self.stopwords]
+        word_vecs = []
+        for word in words:
+            try:
+                vec = self.w2v_model[word]
+                word_vecs.append(vec)
+            except KeyError:
+                # Ignore, if the word doesn't exist in the vocabulary
+                pass
+
+        # Assuming that document vector is the mean of all the word vectors
+        # PS: There are other & better ways to do it.
+        vector = np.mean(word_vecs, axis=0)
+        return vector
+
+    def _cosine_sim(self, vecA, vecB):
+        """Find the cosine similarity distance between two vectors."""
+        csim = np.dot(vecA, vecB) / (np.linalg.norm(vecA) * np.linalg.norm(vecB))
+        if np.isnan(np.sum(csim)):
+            return 0
+        return csim
+
+    def calculate_similarity(self, source_doc, target_docs=None, threshold=0):
+        """Calculates & returns similarity scores between given source document & all
+        the target documents."""
+        if not target_docs:
+            return []
+
+        if isinstance(target_docs, str):
+            target_docs = [target_docs]
+
+        source_vec = self.vectorize(source_doc)
+        results = []
+        for doc in target_docs:
+            target_vec = self.vectorize(doc)
+            sim_score = self._cosine_sim(source_vec, target_vec)
+            if sim_score > threshold:
+                results.append({"score": sim_score, "doc": doc})
+            # Sort results by score in desc order
+            results.sort(key=lambda k: k["score"], reverse=True)
+
+        return results
+
+#########################
+
+from gensim.models.keyedvectors import KeyedVectors
+#from DocSim import DocSim
+
+# Using the pre-trained word2vec model trained using Google news corpus of 3 billion running words.
+# The model can be downloaded here: https://bit.ly/w2vgdrive (~1.4GB)
+# Feel free to use to your own model.
+googlenews_model_path = './data/GoogleNews-vectors-negative300.bin'
+stopwords_path = "./data/stopwords_en.txt"
+
+model = KeyedVectors.load_word2vec_format(googlenews_model_path, binary=True)
+with open(stopwords_path, 'r') as fh:
+    stopwords = fh.read().split(",")
+ds = DocSim(model,stopwords=stopwords)
+
+
+
+#################################  original answer to string
+with open ("original_solution.txt", "r") as myfile:
+    original_ans=myfile.readlines()
+
+#################################
+#source_doc = "how to delete an invoice"
+source_doc = original_ans[0]
+#print(source_doc)
+
+################################# target answers to strings
+with open ("summarize_answer1.txt", "r") as myfile:
+    target_ans=myfile.readlines()
+
+target_docs= []
+#################################
+
+#target_docs = ['delete a invoice', 'how do i remove an invoice', "purge an invoice"]
+#target_docs.append(target_ans)
+target_docs = target_ans
+#print(target_docs)
